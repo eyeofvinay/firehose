@@ -1,7 +1,7 @@
 package io.odpf.firehose.config;
 
-import io.odpf.firehose.config.converter.RedisSinkDataTypeConverter;
-import io.odpf.firehose.config.enums.RedisSinkDataType;
+import io.odpf.depot.config.converter.RedisSinkDataTypeConverter;
+import io.odpf.depot.config.enums.RedisSinkDataType;
 import org.gradle.internal.impldep.org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
