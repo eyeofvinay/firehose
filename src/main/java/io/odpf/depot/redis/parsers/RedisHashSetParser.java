@@ -1,5 +1,10 @@
 package io.odpf.depot.redis.parsers;
 
+import io.odpf.depot.config.OdpfSinkConfig;
+import io.odpf.depot.message.OdpfMessage;
+import io.odpf.depot.message.OdpfMessageParser;
+import io.odpf.depot.message.OdpfMessageParserFactory;
+import io.odpf.depot.message.ParsedOdpfMessage;
 import io.odpf.depot.redis.dataentry.RedisDataEntry;
 import io.odpf.depot.redis.dataentry.RedisHashSetFieldEntry;
 import io.odpf.depot.metrics.StatsDReporter;
@@ -9,6 +14,8 @@ import io.odpf.firehose.metrics.FirehoseInstrumentation;
 import io.odpf.firehose.proto.ProtoToFieldMapper;
 import com.google.protobuf.DynamicMessage;
 import io.odpf.stencil.Parser;
+import org.aeonbits.owner.ConfigFactory;
+import org.apache.hadoop.fs.Stat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +25,7 @@ import java.util.Map;
  * Redis hash set parser.
  */
 public class RedisHashSetParser extends RedisParser {
+    private OdpfSinkConfig sinkConfig;
     private ProtoToFieldMapper protoToFieldMapper;
     private RedisSinkConfig redisSinkConfig;
     private StatsDReporter statsDReporter;
@@ -25,20 +33,19 @@ public class RedisHashSetParser extends RedisParser {
     /**
      * Instantiates a new Redis hash set parser.
      *  @param protoToFieldMapper the proto to field mapper
-     * @param protoParser        the proto parser
      * @param redisSinkConfig    the redis sink config
      * @param statsDReporter     the statsd reporter
      */
-    public RedisHashSetParser(ProtoToFieldMapper protoToFieldMapper, Parser protoParser, RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
-        super(protoParser, redisSinkConfig);
+    public RedisHashSetParser(ProtoToFieldMapper protoToFieldMapper, RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
+        super(OdpfMessageParserFactory.getParser(ConfigFactory.create(OdpfSinkConfig.class, System.getenv()), statsDReporter), redisSinkConfig);
         this.protoToFieldMapper = protoToFieldMapper;
         this.redisSinkConfig = redisSinkConfig;
         this.statsDReporter = statsDReporter;
     }
 
     @Override
-    public List<RedisDataEntry> parse(Message message) {
-        DynamicMessage parsedMessage = parseEsbMessage(message);
+    public List<RedisDataEntry> parse(OdpfMessage message) {
+        ParsedOdpfMessage parsedMessage = parseEsbMessage(message);
         String redisKey = parseTemplate(parsedMessage, redisSinkConfig.getSinkRedisKeyTemplate());
         List<RedisDataEntry> messageEntries = new ArrayList<>();
         Map<String, Object> protoToFieldMap = protoToFieldMapper.getFields(getPayload(message));

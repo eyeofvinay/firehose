@@ -23,11 +23,11 @@ public class RedisParserFactory {
 
         switch (redisSinkConfig.getSinkRedisDataType()) {
             case LIST:
-                return new RedisListParser(protoParser, redisSinkConfig, statsDReporter);
+                return new RedisListParser(redisSinkConfig, statsDReporter);
             case HASHSET:
-                return new RedisHashSetParser(protoToFieldMapper, protoParser, redisSinkConfig, statsDReporter);
+                return new RedisHashSetParser(protoToFieldMapper, redisSinkConfig, statsDReporter);
             case KEYVALUE:
-                return new RedisKeyValueParser(protoParser, redisSinkConfig, statsDReporter);
+                return new RedisKeyValueParser(redisSinkConfig, statsDReporter);
             default:
                 return null;
         }

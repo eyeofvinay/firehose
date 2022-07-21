@@ -1,6 +1,6 @@
 package io.odpf.depot.redis.client;
 
-import io.odpf.firehose.message.Message;
+import io.odpf.depot.message.OdpfMessage;
 
 import java.util.List;
 
@@ -13,14 +13,14 @@ public interface RedisClient {
      *
      * @param messages the messages
      */
-    void prepare(List<Message> messages);
+    void prepare(List<OdpfMessage> messages);
 
     /**
      * Sends the processed messages to redis.
      *
      * @return list of messages
      */
-    List<Message> execute();
+    List<OdpfMessage> execute();
 
     /**
      * Close the client.

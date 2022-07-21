@@ -40,16 +40,15 @@ public class RedisSink implements OdpfSink {
     }
 
     @Override
-    public OdpfSinkResponse pushToSink(List<OdpfMessage> odpfMessages) {
-        List<Message> messages = convertOdpfMessageToMessage(odpfMessages);
-        List<Message> failedMessages = messages;
+    public OdpfSinkResponse pushToSink(List<OdpfMessage> messages) {
+        List<OdpfMessage> failedMessages = messages;
         Instant executionStartTime = null;
         try {
-            firehoseInstrumentation.logInfo("Preparing {} messages", odpfMessages.size());
-            firehoseInstrumentation.captureMessageBatchSize(odpfMessages.size());
-            firehoseInstrumentation.captureMessageMetrics(Metrics.SINK_MESSAGES_TOTAL, Metrics.MessageType.TOTAL, odpfMessages.size());
+            firehoseInstrumentation.logInfo("Preparing {} messages", messages.size());
+            firehoseInstrumentation.captureMessageBatchSize(messages.size());
+            firehoseInstrumentation.captureMessageMetrics(Metrics.SINK_MESSAGES_TOTAL, Metrics.MessageType.TOTAL, messages.size());
             client.prepare(messages);
-            firehoseInstrumentation.capturePreExecutionLatencies(messages);
+            //firehoseInstrumentation.capturePreExecutionLatencies(messages);
             executionStartTime = firehoseInstrumentation.startExecution();
             failedMessages = client.execute();
             firehoseInstrumentation.logInfo("Pushed {} messages", messages.size() - failedMessages.size());
@@ -74,7 +73,7 @@ public class RedisSink implements OdpfSink {
         return failedMessagesToOdpfSinkResponse(failedMessages);
     }
 
-    private OdpfSinkResponse failedMessagesToOdpfSinkResponse(List<Message> failedMessages) {
+    private OdpfSinkResponse failedMessagesToOdpfSinkResponse(List<OdpfMessage> failedMessages) {
         OdpfSinkResponse odpfSinkResponse = new OdpfSinkResponse();
         //TODO: logic
         for(int i = 0; i < failedMessages.size(); i++) {
@@ -82,18 +81,18 @@ public class RedisSink implements OdpfSink {
         }
         return odpfSinkResponse;
     }
-    private void processFailedMessages(List<Message> failedMessages) {
+    private void processFailedMessages(List<OdpfMessage> failedMessages) {
         if (failedMessages.size() > 0) {
             firehoseInstrumentation.logError("Failed to Push {} messages to sink ", failedMessages.size());
             failedMessages.forEach(m -> {
-                m.setDefaultErrorIfNotPresent();
-                firehoseInstrumentation.captureMessageMetrics(SINK_MESSAGES_TOTAL, Metrics.MessageType.FAILURE, m.getErrorInfo().getErrorType(), 1);
-                firehoseInstrumentation.captureErrorMetrics(m.getErrorInfo().getErrorType());
-                firehoseInstrumentation.logError("Failed to Push message. Error: {},Topic: {}, Partition: {},Offset: {}",
-                        m.getErrorInfo().getErrorType(),
-                        m.getTopic(),
-                        m.getPartition(),
-                        m.getOffset());
+//                m.setDefaultErrorIfNotPresent();
+//                firehoseInstrumentation.captureMessageMetrics(SINK_MESSAGES_TOTAL, Metrics.MessageType.FAILURE, m.getErrorInfo().getErrorType(), 1);
+//                firehoseInstrumentation.captureErrorMetrics(m.getErrorInfo().getErrorType());
+//                firehoseInstrumentation.logError("Failed to Push message. Error: {},Topic: {}, Partition: {},Offset: {}",
+//                        m.getErrorInfo().getErrorType(),
+//                        m.getTopic(),
+//                        m.getPartition(),
+//                        m.getOffset());
             });
         }
     }

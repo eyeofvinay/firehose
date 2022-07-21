@@ -1,6 +1,10 @@
 package io.odpf.depot.redis.parsers;
 
 import com.google.protobuf.DynamicMessage;
+import io.odpf.depot.config.OdpfSinkConfig;
+import io.odpf.depot.message.OdpfMessage;
+import io.odpf.depot.message.OdpfMessageParserFactory;
+import io.odpf.depot.message.ParsedOdpfMessage;
 import io.odpf.depot.redis.dataentry.RedisDataEntry;
 import io.odpf.depot.metrics.StatsDReporter;
 import io.odpf.depot.config.RedisSinkConfig;
@@ -8,6 +12,7 @@ import io.odpf.firehose.message.Message;
 import io.odpf.firehose.metrics.FirehoseInstrumentation;
 import io.odpf.depot.redis.dataentry.RedisKeyValueEntry;
 import io.odpf.stencil.Parser;
+import org.aeonbits.owner.ConfigFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,15 +21,15 @@ public class RedisKeyValueParser extends RedisParser {
     private RedisSinkConfig redisSinkConfig;
     private StatsDReporter statsDReporter;
 
-    public RedisKeyValueParser(Parser protoParser, RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
-        super(protoParser, redisSinkConfig);
+    public RedisKeyValueParser(RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
+        super(OdpfMessageParserFactory.getParser(ConfigFactory.create(OdpfSinkConfig.class, System.getenv()), statsDReporter), redisSinkConfig);
         this.redisSinkConfig = redisSinkConfig;
         this.statsDReporter = statsDReporter;
     }
 
     @Override
-    public List<RedisDataEntry> parse(Message message) {
-        DynamicMessage parsedMessage = parseEsbMessage(message);
+    public List<RedisDataEntry> parse(OdpfMessage message) {
+        ParsedOdpfMessage parsedMessage = parseEsbMessage(message);
         String redisKey = parseTemplate(parsedMessage, redisSinkConfig.getSinkRedisKeyTemplate());
         String protoIndex = redisSinkConfig.getSinkRedisKeyValuetDataProtoIndex();
         if (protoIndex == null) {

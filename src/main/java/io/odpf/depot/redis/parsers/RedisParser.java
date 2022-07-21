@@ -1,17 +1,25 @@
 package io.odpf.depot.redis.parsers;
 
 
+import io.odpf.depot.config.OdpfSinkConfig;
+import io.odpf.depot.message.OdpfMessage;
+import io.odpf.depot.message.OdpfMessageParser;
+import io.odpf.depot.message.ParsedOdpfMessage;
+import io.odpf.depot.message.SinkConnectorSchemaMessageMode;
 import io.odpf.depot.redis.dataentry.RedisDataEntry;
 import io.odpf.depot.config.RedisSinkConfig;
+import io.odpf.firehose.config.AppConfig;
 import io.odpf.firehose.message.Message;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.odpf.stencil.Parser;
 import lombok.AllArgsConstructor;
+import org.aeonbits.owner.ConfigFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.errors.InvalidConfigurationException;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -22,13 +30,11 @@ import java.util.stream.Collectors;
  */
 @AllArgsConstructor
 public abstract class RedisParser {
-
-    private Parser protoParser;
+    private OdpfMessageParser odpfMessageParser;
     private RedisSinkConfig redisSinkConfig;
+    public abstract List<RedisDataEntry> parse(OdpfMessage message);
 
-    public abstract List<RedisDataEntry> parse(Message message);
-
-    public List<RedisDataEntry> parse(List<Message> messages) {
+    public List<RedisDataEntry> parse(List<OdpfMessage> messages) {
         return messages
                 .stream()
                 .map(this::parse)
@@ -42,14 +48,14 @@ public abstract class RedisParser {
      * @param message parsed message
      * @return Parsed Proto object
      */
-    DynamicMessage parseEsbMessage(Message message) {
-        DynamicMessage parsedMessage;
+    ParsedOdpfMessage parseEsbMessage(OdpfMessage message) {
+        String schemaClass = ConfigFactory.create(AppConfig.class, System.getenv()).getInputSchemaProtoClass();
         try {
-            parsedMessage = protoParser.parse(getPayload(message));
-        } catch (InvalidProtocolBufferException e) {
-            throw new IllegalArgumentException("Unable to parse data when reading Key", e);
+            ParsedOdpfMessage parsedOdpfMessage = odpfMessageParser.parse(message, SinkConnectorSchemaMessageMode.LOG_MESSAGE, schemaClass);
+            return parsedOdpfMessage;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return parsedMessage;
     }
 
     /**
@@ -59,7 +65,7 @@ public abstract class RedisParser {
      * @param template the template
      * @return parsed template
      */
-    String parseTemplate(DynamicMessage data, String template) {
+    String parseTemplate(ParsedOdpfMessage data, String template) {
         if (StringUtils.isEmpty(template)) {
             throw new IllegalArgumentException("Template '" + template + "' is invalid");
         }
@@ -79,7 +85,7 @@ public abstract class RedisParser {
                 : renderedTemplate;
     }
 
-    private String renderStringTemplate(DynamicMessage parsedMessage, String pattern, String patternVariables) {
+    private String renderStringTemplate(ParsedOdpfMessage parsedMessage, String pattern, String patternVariables) {
         if (StringUtils.isEmpty(patternVariables)) {
             return pattern;
         }
@@ -98,18 +104,25 @@ public abstract class RedisParser {
      * @param fieldNumber   the field number
      * @return Data object
      */
-    Object getDataByFieldNumber(DynamicMessage parsedMessage, String fieldNumber) {
+    Object getDataByFieldNumber(ParsedOdpfMessage parsedMessage, String fieldNumber) {
         int fieldNumberInt;
         try {
             fieldNumberInt = Integer.parseInt(fieldNumber);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid Proto Index");
+            throw new IllegalArgumentException("Invalid Index");
         }
-        Descriptors.FieldDescriptor fieldDescriptor = parsedMessage.getDescriptorForType().findFieldByNumber(fieldNumberInt);
-        if (fieldDescriptor == null) {
-            throw new IllegalArgumentException(String.format("Descriptor not found for index: %s", fieldNumber));
+        if(redisSinkConfig.getSinkRedisInputMessageType().equals("PROTO"
+
+        )) {
+            DynamicMessage dynamicMessage = (DynamicMessage) parsedMessage.getRaw();
+            Descriptors.FieldDescriptor fieldDescriptor = dynamicMessage.getDescriptorForType().findFieldByNumber(fieldNumberInt);
+            if (fieldDescriptor == null) {
+                throw new IllegalArgumentException(String.format("Descriptor not found for index: %s", fieldNumber));
+            }
+            return dynamicMessage.getField(fieldDescriptor);
+        } else {
+            return new Object();
         }
-        return parsedMessage.getField(fieldDescriptor);
     }
 
     /**
@@ -118,11 +131,11 @@ public abstract class RedisParser {
      * @param message the message
      * @return binary payload
      */
-    byte[] getPayload(Message message) {
+    byte[] getPayload(OdpfMessage message) {
         if (redisSinkConfig.getKafkaRecordParserMode().equals("key")) {
-            return message.getLogKey();
+            return (byte[]) message.getLogKey();
         } else {
-            return message.getLogMessage();
+            return (byte[]) message.getLogMessage();
         }
     }
 }

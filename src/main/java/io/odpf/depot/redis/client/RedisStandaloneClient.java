@@ -1,5 +1,6 @@
 package io.odpf.depot.redis.client;
 
+import io.odpf.depot.message.OdpfMessage;
 import io.odpf.depot.redis.dataentry.RedisDataEntry;
 import io.odpf.depot.redis.parsers.RedisParser;
 import io.odpf.firehose.message.Message;
@@ -40,7 +41,7 @@ public class RedisStandaloneClient implements RedisClient {
     }
 
     @Override
-    public void prepare(List<Message> messages) {
+    public void prepare(List<OdpfMessage> messages) {
         List<RedisDataEntry> redisDataEntries = redisParser.parse(messages);
         jedisPipelined = jedis.pipelined();
 
@@ -49,7 +50,7 @@ public class RedisStandaloneClient implements RedisClient {
     }
 
     @Override
-    public List<Message> execute() {
+    public List<OdpfMessage> execute() {
         Response<List<Object>> responses = jedisPipelined.exec();
         firehoseInstrumentation.logDebug("jedis responses: {}", responses);
         jedisPipelined.sync();

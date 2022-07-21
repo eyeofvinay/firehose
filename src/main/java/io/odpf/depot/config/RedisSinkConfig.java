@@ -40,5 +40,7 @@ public interface RedisSinkConfig extends AppConfig {
     @ConverterClass(RedisSinkDeploymentTypeConverter.class)
     RedisSinkDeploymentType getSinkRedisDeploymentType();
 
-
+    @Key("SINK_REDIS_INPUT_MESSAGE_TYPE")
+    @DefaultValue("PROTO")
+    String getSinkRedisInputMessageType();
 }
