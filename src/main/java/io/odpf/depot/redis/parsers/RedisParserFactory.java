@@ -19,7 +19,7 @@ public class RedisParserFactory {
      * @param statsDReporter     the statsd reporter
      * @return RedisParser
      */
-    public static RedisParser getParser(ProtoToFieldMapper protoToFieldMapper, Parser protoParser, RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
+    public static RedisParser getParser(ProtoToFieldMapper protoToFieldMapper, RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
 
         switch (redisSinkConfig.getSinkRedisDataType()) {
             case LIST:

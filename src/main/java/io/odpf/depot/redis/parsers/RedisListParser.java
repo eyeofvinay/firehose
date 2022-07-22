@@ -33,7 +33,7 @@ public class RedisListParser extends RedisParser {
      * @param statsDReporter  the stats d reporter
      */
     public RedisListParser(RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
-        super(OdpfMessageParserFactory.getParser(ConfigFactory.create(OdpfSinkConfig.class, System.getenv()), statsDReporter), redisSinkConfig);
+        super(OdpfMessageParserFactory.getParser(ConfigFactory.create(OdpfSinkConfig.class, System.getenv()), statsDReporter), ConfigFactory.create(OdpfSinkConfig.class, System.getenv()));
         this.redisSinkConfig = redisSinkConfig;
         this.statsDReporter = statsDReporter;
     }

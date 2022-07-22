@@ -16,6 +16,7 @@ import com.google.protobuf.DynamicMessage;
 import io.odpf.stencil.Parser;
 import org.aeonbits.owner.ConfigFactory;
 import org.apache.hadoop.fs.Stat;
+import org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +26,8 @@ import java.util.Map;
  * Redis hash set parser.
  */
 public class RedisHashSetParser extends RedisParser {
-    private OdpfSinkConfig sinkConfig;
-    private ProtoToFieldMapper protoToFieldMapper;
     private RedisSinkConfig redisSinkConfig;
+    private ProtoToFieldMapper protoToFieldMapper;
     private StatsDReporter statsDReporter;
 
     /**
@@ -37,10 +37,10 @@ public class RedisHashSetParser extends RedisParser {
      * @param statsDReporter     the statsd reporter
      */
     public RedisHashSetParser(ProtoToFieldMapper protoToFieldMapper, RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
-        super(OdpfMessageParserFactory.getParser(ConfigFactory.create(OdpfSinkConfig.class, System.getenv()), statsDReporter), redisSinkConfig);
-        this.protoToFieldMapper = protoToFieldMapper;
-        this.redisSinkConfig = redisSinkConfig;
+        super(OdpfMessageParserFactory.getParser(ConfigFactory.create(OdpfSinkConfig.class, System.getenv()), statsDReporter), ConfigFactory.create(OdpfSinkConfig.class, System.getenv()));
         this.statsDReporter = statsDReporter;
+        this.redisSinkConfig = redisSinkConfig;
+        this.protoToFieldMapper = protoToFieldMapper;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class RedisHashSetParser extends RedisParser {
         ParsedOdpfMessage parsedMessage = parseEsbMessage(message);
         String redisKey = parseTemplate(parsedMessage, redisSinkConfig.getSinkRedisKeyTemplate());
         List<RedisDataEntry> messageEntries = new ArrayList<>();
-        Map<String, Object> protoToFieldMap = protoToFieldMapper.getFields(getPayload(message));
+        Map<String, Object> protoToFieldMap = protoToFieldMapper.getFields(getPayload(message)); //TODO: remove dependency on ProtoToFieldMapper
         protoToFieldMap.forEach((key, value) -> messageEntries.add(new RedisHashSetFieldEntry(redisKey, parseTemplate(parsedMessage, key), String.valueOf(value), new FirehoseInstrumentation(statsDReporter, RedisHashSetFieldEntry.class))));
         return messageEntries;
     }

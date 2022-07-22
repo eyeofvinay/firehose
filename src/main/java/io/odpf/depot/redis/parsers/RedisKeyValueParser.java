@@ -22,7 +22,7 @@ public class RedisKeyValueParser extends RedisParser {
     private StatsDReporter statsDReporter;
 
     public RedisKeyValueParser(RedisSinkConfig redisSinkConfig, StatsDReporter statsDReporter) {
-        super(OdpfMessageParserFactory.getParser(ConfigFactory.create(OdpfSinkConfig.class, System.getenv()), statsDReporter), redisSinkConfig);
+        super(OdpfMessageParserFactory.getParser(ConfigFactory.create(OdpfSinkConfig.class, System.getenv()), statsDReporter), ConfigFactory.create(OdpfSinkConfig.class, System.getenv()));
         this.redisSinkConfig = redisSinkConfig;
         this.statsDReporter = statsDReporter;
     }
