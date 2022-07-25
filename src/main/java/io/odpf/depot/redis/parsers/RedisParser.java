@@ -1,8 +1,11 @@
 package io.odpf.depot.redis.parsers;
 
 
+import io.odpf.depot.OdpfSinkResponse;
 import io.odpf.depot.config.OdpfSinkConfig;
 import io.odpf.depot.config.enums.SinkConnectorSchemaDataType;
+import io.odpf.depot.error.ErrorInfo;
+import io.odpf.depot.error.ErrorType;
 import io.odpf.depot.message.*;
 import io.odpf.depot.redis.dataentry.RedisDataEntry;
 import com.google.protobuf.Descriptors;
@@ -12,10 +15,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.errors.InvalidConfigurationException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Convert kafka messages to RedisDataEntry.
@@ -24,14 +26,35 @@ import java.util.stream.Collectors;
 public abstract class RedisParser {
     private OdpfMessageParser odpfMessageParser;
     private OdpfSinkConfig sinkConfig;
-    public abstract List<RedisDataEntry> parse(OdpfMessage message);
+    public abstract List<RedisDataEntry> parse(OdpfMessage message) throws IOException;
 
-    public List<RedisDataEntry> parse(List<OdpfMessage> messages) {
-        return messages
-                .stream()
-                .map(this::parse)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+    public List<RedisDataEntry> parse(List<OdpfMessage> messages, OdpfSinkResponse odpfSinkResponse) {
+        List<RedisDataEntry> list = new ArrayList<>();
+
+        for(int i = 0; i < messages.size(); i++) {
+            try {
+                List<RedisDataEntry> p = parse(messages.get(i));
+                list.addAll(p);
+            }
+            catch (InvalidConfigurationException e) {
+                // key template does not have a comma
+                odpfSinkResponse.addErrors(i, new ErrorInfo(e, ErrorType.DEFAULT_ERROR));
+            }
+            catch (IllegalArgumentException e) {
+                // empty key template found
+                odpfSinkResponse.addErrors(i, new ErrorInfo(e, ErrorType.DEFAULT_ERROR));
+            }
+            catch (IOException e) {
+                // when deserializing invalid byte array found
+                odpfSinkResponse.addErrors(i, new ErrorInfo(e, ErrorType.DESERIALIZATION_ERROR));
+            }
+            catch (Exception e) {
+                // generic handler
+                odpfSinkResponse.addErrors(i, new ErrorInfo(e, ErrorType.DEFAULT_ERROR));
+            }
+        }
+
+        return list;
     }
 
     /**
@@ -40,7 +63,7 @@ public abstract class RedisParser {
      * @param message parsed message
      * @return Parsed Proto object
      */
-    ParsedOdpfMessage parseEsbMessage(OdpfMessage message) {
+    ParsedOdpfMessage parseEsbMessage(OdpfMessage message) throws IOException {
         String schemaClass;
         if (sinkConfig.getSinkConnectorSchemaMessageMode().equals(SinkConnectorSchemaMessageMode.LOG_KEY)) {
             schemaClass = sinkConfig.getSinkConnectorSchemaKeyClass();
@@ -50,12 +73,8 @@ public abstract class RedisParser {
         //TODO : depot config set
         schemaClass = "io.odpf.firehose.consumer.TestMessage";
 
-        try {
-            ParsedOdpfMessage parsedOdpfMessage = odpfMessageParser.parse(message, SinkConnectorSchemaMessageMode.LOG_MESSAGE, schemaClass);
-            return parsedOdpfMessage;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        ParsedOdpfMessage parsedOdpfMessage = odpfMessageParser.parse(message, SinkConnectorSchemaMessageMode.LOG_MESSAGE, schemaClass);
+        return parsedOdpfMessage;
     }
 
     /**

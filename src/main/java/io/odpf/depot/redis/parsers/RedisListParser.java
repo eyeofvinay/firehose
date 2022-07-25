@@ -16,6 +16,7 @@ import com.google.protobuf.DynamicMessage;
 import io.odpf.stencil.Parser;
 import org.aeonbits.owner.ConfigFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +40,7 @@ public class RedisListParser extends RedisParser {
     }
 
     @Override
-    public List<RedisDataEntry> parse(OdpfMessage message) {
+    public List<RedisDataEntry> parse(OdpfMessage message) throws IOException {
         ParsedOdpfMessage parsedMessage = parseEsbMessage(message);
         String redisKey = parseTemplate(parsedMessage, redisSinkConfig.getSinkRedisKeyTemplate());
         String protoIndex = redisSinkConfig.getSinkRedisListDataProtoIndex();

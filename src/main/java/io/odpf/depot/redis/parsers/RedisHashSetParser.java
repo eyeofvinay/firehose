@@ -18,6 +18,7 @@ import org.aeonbits.owner.ConfigFactory;
 import org.apache.hadoop.fs.Stat;
 import org.apache.logging.log4j.core.pattern.AbstractStyleNameConverter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public class RedisHashSetParser extends RedisParser {
     }
 
     @Override
-    public List<RedisDataEntry> parse(OdpfMessage message) {
+    public List<RedisDataEntry> parse(OdpfMessage message) throws IOException {
         ParsedOdpfMessage parsedMessage = parseEsbMessage(message);
         String redisKey = parseTemplate(parsedMessage, redisSinkConfig.getSinkRedisKeyTemplate());
         List<RedisDataEntry> messageEntries = new ArrayList<>();

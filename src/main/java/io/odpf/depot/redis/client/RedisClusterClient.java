@@ -1,5 +1,6 @@
 package io.odpf.depot.redis.client;
 
+import io.odpf.depot.OdpfSinkResponse;
 import io.odpf.depot.message.OdpfMessage;
 import io.odpf.depot.redis.dataentry.RedisDataEntry;
 import io.odpf.depot.redis.parsers.RedisParser;
@@ -38,8 +39,8 @@ public class RedisClusterClient implements RedisClient {
     }
 
     @Override
-    public void prepare(List<OdpfMessage> messages) {
-        redisDataEntries = redisParser.parse(messages);
+    public void prepare(List<OdpfMessage> messages, OdpfSinkResponse odpfSinkResponse) {
+        redisDataEntries = redisParser.parse(messages, odpfSinkResponse);
     }
 
     @Override

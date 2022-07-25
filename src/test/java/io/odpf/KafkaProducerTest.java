@@ -43,7 +43,11 @@ class Producer {
     public void produceMany(int N) {
         for(int i = 0; i < N; i++) {
             TestMessage testMessage = TestMessage.newBuilder().setOrderNumber("order" + i).setOrderUrl("url" + i).setOrderDetails("details" + i).build();
-            ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>(topicName, testMessage.toByteArray());
+            byte[] byteArray = testMessage.toByteArray();
+            if(i == 3) {
+                byteArray[0] = -1;
+            }
+            ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>(topicName, byteArray);
             producer.send(producerRecord);
         }
         producer.close();
@@ -53,6 +57,6 @@ class Producer {
 public class KafkaProducerTest {
     public static void main(String[] args) {
         Producer producer = new Producer("test-topic", "localhost:9092");
-        producer.produceMany(4);
+        producer.produceMany(10);
     }
 }
