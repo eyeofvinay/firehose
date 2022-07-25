@@ -49,7 +49,7 @@ public class RedisHashSetParser extends RedisParser {
         ParsedOdpfMessage parsedMessage = parseEsbMessage(message);
         String redisKey = parseTemplate(parsedMessage, redisSinkConfig.getSinkRedisKeyTemplate());
         List<RedisDataEntry> messageEntries = new ArrayList<>();
-        Map<String, Object> protoToFieldMap = protoToFieldMapper.getFields(getPayload(message)); //TODO: remove dependency on ProtoToFieldMapper
+        Map<String, Object> protoToFieldMap = protoToFieldMapper.getFields(getPayload(message));
         protoToFieldMap.forEach((key, value) -> messageEntries.add(new RedisHashSetFieldEntry(redisKey, parseTemplate(parsedMessage, key), String.valueOf(value), new FirehoseInstrumentation(statsDReporter, RedisHashSetFieldEntry.class))));
         return messageEntries;
     }

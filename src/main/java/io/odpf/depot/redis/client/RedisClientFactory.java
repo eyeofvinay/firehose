@@ -43,7 +43,7 @@ public class RedisClientFactory {
     }
 
     public RedisClient getClient() {
-        Parser protoParser =  stencilClient.getParser(redisSinkConfig.getInputSchemaProtoClass()); //TODO Remove dependency
+        Parser protoParser =  stencilClient.getParser(redisSinkConfig.getInputSchemaProtoClass());
         ProtoToFieldMapper protoToFieldMapper = new ProtoToFieldMapper(protoParser, redisSinkConfig.getInputSchemaProtoToColumnMapping());
         RedisParser redisParser = RedisParserFactory.getParser(protoToFieldMapper, redisSinkConfig, statsDReporter);
         RedisSinkDeploymentType redisSinkDeploymentType = redisSinkConfig.getSinkRedisDeploymentType();
